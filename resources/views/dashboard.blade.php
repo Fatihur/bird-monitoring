@@ -181,8 +181,19 @@
 
             <div class="card">
                 <div class="card-title">Deteksi Hari Ini</div>
-                <div id="stat-value" class="stat-value">0</div>
-                <div class="stat-label">total deteksi</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div class="status-item">
+                        <div class="stat-value" id="stat-aman" style="font-size:1.8rem;color:#00A63D;">0</div>
+                        <div class="stat-label">AMAN</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="stat-value" id="stat-terdeteksi" style="font-size:1.8rem;color:#FF2157;">0</div>
+                        <div class="stat-label">TERDETEKSI</div>
+                    </div>
+                </div>
+                <div style="text-align:center;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);">
+                    <span class="stat-label">Total: <strong id="stat-total" style="color:#006666;">0</strong></span>
+                </div>
             </div>
         </div>
 
@@ -258,7 +269,9 @@
                 ts.style.display = 'block';
             }
 
-            document.getElementById('stat-value').textContent = data.todayCount;
+            document.getElementById('stat-total').textContent = data.todayCount;
+            document.getElementById('stat-aman').textContent = data.amanCount || 0;
+            document.getElementById('stat-terdeteksi').textContent = data.terdeteksiCount || 0;
 
             const tbody = document.getElementById('history-body');
             if (data.histories && data.histories.length > 0) {
@@ -354,7 +367,9 @@
                 .then(function(data) {
                     if (data.success) {
                         document.getElementById('history-body').innerHTML = '<tr><td colspan="5" class="empty-state">Riwayat dikosongkan.</td></tr>';
-                        document.getElementById('stat-value').textContent = '0';
+                        document.getElementById('stat-total').textContent = '0';
+                        document.getElementById('stat-aman').textContent = '0';
+                        document.getElementById('stat-terdeteksi').textContent = '0';
                     }
                 });
         }
