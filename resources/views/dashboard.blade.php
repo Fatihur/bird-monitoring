@@ -78,7 +78,9 @@
             padding: 14px 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 1.2px; color: #006666;
             box-shadow: 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.06);
+            display: flex; align-items: center; justify-content: space-between;
         }
+        .table-header .btn { padding: 4px 12px; font-size: 0.65rem; }
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         thead th {
@@ -121,6 +123,9 @@
         .btn-on:hover:not(:disabled) { background: #007a7a; }
         .btn-off { background: #E7E5E4; color: #1E2938; }
         .btn-off:hover:not(:disabled) { background: #E0DEDD; }
+        .btn-danger { background: #E7E5E4; color: #FF2157; }
+        .btn-danger:hover:not(:disabled) { background: #E0DEDD; }
+        .ml-auto { margin-left: auto; }
         .ctrl-feedback { font-size: 0.78rem; color: #1E2938; min-width: 140px; opacity: 0.6; }
         .ctrl-feedback.ok { color: #00A63D; opacity: 1; }
         .ctrl-feedback.err { color: #FF2157; opacity: 1; }
@@ -187,12 +192,15 @@
                 <button id="btn-buzzer-on" class="btn btn-on" onclick="buzzerOn()">Nyalakan Buzzer</button>
                 <button id="btn-buzzer-off" class="btn btn-off" onclick="buzzerOff()">Matikan Buzzer</button>
                 <span id="buzzer-status" class="ctrl-feedback">—</span>
-                <button onclick="fetchData()" id="btn-refresh" class="btn btn-off" style="padding:6px 14px;font-size:0.7rem;">↻ Refresh</button>
+                <button onclick="fetchData()" id="btn-refresh" class="btn btn-off ml-auto" style="padding:6px 14px;font-size:0.7rem;">↻ Refresh</button>
             </div>
         </div>
 
         <div class="table-wrapper">
-            <div class="table-header">Riwayat Monitoring (50 terakhir)</div>
+            <div class="table-header">
+                <span>Riwayat Monitoring (50 terakhir)</span>
+                <button onclick="clearHistory()" class="btn btn-danger">✕ Hapus Riwayat</button>
+            </div>
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -337,6 +345,18 @@
                     status.textContent = '✗ Gagal — server tidak merespon';
                 })
                 .finally(function() { btn.disabled = false; });
+        }
+
+        function clearHistory() {
+            if (!confirm('Hapus semua riwayat monitoring?')) return;
+            fetch('/api/history', { method: 'DELETE' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        document.getElementById('history-body').innerHTML = '<tr><td colspan="5" class="empty-state">Riwayat dikosongkan.</td></tr>';
+                        document.getElementById('stat-value').textContent = '0';
+                    }
+                });
         }
 
         function updateClock() {

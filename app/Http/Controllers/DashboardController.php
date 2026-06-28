@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Command;
 use App\Models\MonitoringData;
 use Carbon\Carbon;
 
@@ -27,5 +28,13 @@ class DashboardController extends Controller
             'todayCount' => $todayCount,
             'histories' => $histories,
         ]);
+    }
+
+    public function clearHistory()
+    {
+        MonitoringData::truncate();
+        Command::truncate();
+
+        return response()->json(['success' => true]);
     }
 }
