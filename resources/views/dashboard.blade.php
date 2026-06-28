@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Pengusir Burung - Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -198,6 +199,11 @@
         </div>
 
         <div class="card card-full">
+            <div class="card-title">Grafik Deteksi Per Jam (Hari Ini)</div>
+            <canvas id="chart-deteksi" height="100"></canvas>
+        </div>
+
+        <div class="card card-full">
             <div class="card-title">Kontrol Buzzer</div>
             <div class="ctrl-bar">
                 <button id="btn-buzzer-on" class="btn btn-on" onclick="buzzerOn()">Nyalakan Buzzer</button>
@@ -292,6 +298,11 @@
             }
 
             document.getElementById('last-update').textContent = new Date().toLocaleTimeString('id-ID');
+
+            if (window.deteksiChart && data.chart) {
+                deteksiChart.data.datasets[0].data = data.chart;
+                deteksiChart.update();
+            }
         }
 
         function fetchData() {
@@ -370,6 +381,10 @@
                         document.getElementById('stat-total').textContent = '0';
                         document.getElementById('stat-aman').textContent = '0';
                         document.getElementById('stat-terdeteksi').textContent = '0';
+                        if (window.deteksiChart) {
+                            deteksiChart.data.datasets[0].data = [];
+                            deteksiChart.update();
+                        }
                     }
                 });
         }
@@ -385,6 +400,35 @@
 
         updateClock();
         setInterval(updateClock, 1000);
+
+        window.deteksiChart = new Chart(document.getElementById('chart-deteksi'), {
+            type: 'bar',
+            data: {
+                labels: ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23'],
+                datasets: [{
+                    label: 'TERDETEKSI',
+                    data: [],
+                    backgroundColor: '#FF2157',
+                    borderRadius: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { font: { family: 'Space Mono' }, color: '#1E2938' },
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, font: { family: 'Space Mono' }, color: '#1E2938' },
+                        grid: { color: 'rgba(0,0,0,0.06)' }
+                    }
+                }
+            }
+        });
+
         fetchData();
         setInterval(fetchData, 3000);
     </script>
