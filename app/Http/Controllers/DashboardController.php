@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Command;
 use App\Models\MonitoringData;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -17,14 +18,15 @@ class DashboardController extends Controller
         return view('dashboard', compact('latest', 'todayCount', 'histories'));
     }
 
-    public function json()
+    public function json(Request $request)
     {
         $latest = MonitoringData::latest()->first();
         $today = MonitoringData::whereDate('created_at', Carbon::today());
         $todayCount = $today->count();
         $amanCount = (clone $today)->where('deteksi_burung', 'AMAN')->count();
         $terdeteksiCount = (clone $today)->where('deteksi_burung', 'TERDETEKSI')->count();
-        $histories = MonitoringData::latest()->take(50)->get();
+
+        $histories = MonitoringData::latest()->paginate(50, ['*'], 'page', $request->query('page', 1));
 
         $deteksiPerJam = (clone $today)->where('deteksi_burung', 'TERDETEKSI')
             ->selectRaw("strftime('%H', created_at) as jam, count(*) as total")
@@ -44,7 +46,10 @@ class DashboardController extends Controller
             'amanCount' => $amanCount,
             'terdeteksiCount' => $terdeteksiCount,
             'chart' => $chart,
-            'histories' => $histories,
+            'histories' => $histories->items(),
+            'current_page' => $histories->currentPage(),
+            'last_page' => $histories->lastPage(),
+            'total' => $histories->total(),
         ]);
     }
 

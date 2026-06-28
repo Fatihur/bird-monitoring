@@ -82,6 +82,22 @@
             display: flex; align-items: center; justify-content: space-between;
         }
         .table-header .btn { padding: 4px 12px; font-size: 0.65rem; }
+        .pagination {
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; padding: 12px 20px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 -1px 0 rgba(0,0,0,0.06);
+        }
+        .page-btn {
+            padding: 4px 10px; border-radius: 4px; border: none;
+            font-family: 'Space Mono', monospace; font-size: 0.72rem; cursor: pointer;
+            background: #E7E5E4; color: #1E2938;
+            box-shadow: -2px -2px 4px rgba(255,255,255,0.6), 2px 2px 6px rgba(0,0,0,0.08);
+            transition: box-shadow .15s, transform .15s;
+        }
+        .page-btn:active { box-shadow: inset 2px 2px 4px rgba(0,0,0,0.08), inset -2px -2px 4px rgba(255,255,255,0.6); transform: scale(0.95); }
+        .page-btn:disabled { opacity: .3; cursor: not-allowed; }
+        .page-btn.active { background: #006666; color: #fff; }
+        .page-info { font-size: 0.7rem; color: #1E2938; opacity: 0.6; }
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         thead th {
@@ -215,7 +231,7 @@
 
         <div class="table-wrapper">
             <div class="table-header">
-                <span>Riwayat Monitoring (50 terakhir)</span>
+                <span id="riwayat-title">Riwayat Monitoring</span>
                 <button onclick="clearHistory()" class="btn btn-danger">✕ Hapus Riwayat</button>
             </div>
             <div class="table-responsive">
@@ -234,6 +250,7 @@
                     </tbody>
                 </table>
             </div>
+            <div id="pagination" class="pagination"></div>
         </div>
     </div>
 
@@ -251,6 +268,26 @@
             const d = document.createElement('div');
             d.textContent = text || '—';
             return d.innerHTML;
+        }
+
+        var currentPage = 1;
+
+        function renderPagination(data) {
+            var el = document.getElementById('pagination');
+            if (data.last_page <= 1) { el.innerHTML = ''; return; }
+            var html = '';
+            html += '<button class="page-btn" onclick="goPage(1)"' + (data.current_page <= 1 ? ' disabled' : '') + '>«</button>';
+            html += '<button class="page-btn" onclick="goPage(' + (data.current_page - 1) + ')"' + (data.current_page <= 1 ? ' disabled' : '') + '>‹</button>';
+            html += '<span class="page-info"> Halaman ' + data.current_page + ' / ' + data.last_page + ' </span>';
+            html += '<button class="page-btn" onclick="goPage(' + (data.current_page + 1) + ')"' + (data.current_page >= data.last_page ? ' disabled' : '') + '>›</button>';
+            html += '<button class="page-btn" onclick="goPage(' + data.last_page + ')"' + (data.current_page >= data.last_page ? ' disabled' : '') + '>»</button>';
+            el.innerHTML = html;
+            document.getElementById('riwayat-title').textContent = 'Riwayat Monitoring (' + data.total + ' total)';
+        }
+
+        function goPage(page) {
+            currentPage = page;
+            fetchData();
         }
 
         function updateDashboard(data) {
@@ -307,13 +344,14 @@
 
         function fetchData() {
             var statusEl = document.getElementById('connection-status');
-            fetch('/json')
+            fetch('/json?page=' + currentPage)
                 .then(function(r) {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     return r.json();
                 })
                 .then(function(data) {
                     updateDashboard(data);
+                    renderPagination(data);
                     statusEl.innerHTML = '<span class="dot dot-green"></span> Live';
                 })
                 .catch(function() {
@@ -378,9 +416,12 @@
                 .then(function(data) {
                     if (data.success) {
                         document.getElementById('history-body').innerHTML = '<tr><td colspan="5" class="empty-state">Riwayat dikosongkan.</td></tr>';
+                        document.getElementById('riwayat-title').textContent = 'Riwayat Monitoring';
+                        document.getElementById('pagination').innerHTML = '';
                         document.getElementById('stat-total').textContent = '0';
                         document.getElementById('stat-aman').textContent = '0';
                         document.getElementById('stat-terdeteksi').textContent = '0';
+                        currentPage = 1;
                         if (window.deteksiChart) {
                             deteksiChart.data.datasets[0].data = [];
                             deteksiChart.update();
