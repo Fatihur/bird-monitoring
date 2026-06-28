@@ -1,5 +1,4 @@
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
 //========================
@@ -17,7 +16,7 @@ const char* password = "Taara2025";
 //========================
 // SERVER LARAVEL
 //========================
-String serverBase = "https://monitor-burung.web.id/api";
+String serverBase = "http://104.245.35.3:8080/api";
 String serverUrl = serverBase + "/update";
 
 //========================
@@ -166,8 +165,7 @@ void pollCommand()
 
   String url = serverBase + "/command";
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  WiFiClient client;
   HTTPClient http;
 
   http.begin(client, url);
@@ -243,8 +241,7 @@ void kirimAck()
 
   String url = serverBase + "/command/ack";
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  WiFiClient client;
   HTTPClient http;
 
   http.begin(client, url);
@@ -276,8 +273,7 @@ void kirimData(
     return;
   }
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  WiFiClient client;
   HTTPClient http;
 
   http.begin(client, serverUrl);
