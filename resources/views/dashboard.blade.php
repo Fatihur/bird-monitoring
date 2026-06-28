@@ -148,6 +148,7 @@
                 <span id="connection-status" class="status-indicator"><span class="dot dot-green"></span> Live</span>
                 <span id="last-update">—</span>
                 <div id="clock"></div>
+                <button onclick="fetchData()" id="btn-refresh" class="btn btn-off" style="padding:6px 14px;font-size:0.7rem;">↻ Refresh</button>
             </div>
         </header>
 
@@ -283,8 +284,7 @@
                     updateDashboard(data);
                     statusEl.innerHTML = '<span class="dot dot-green"></span> Live';
                 })
-                .catch(function(e) {
-                    console.error('fetchData error:', e);
+                .catch(function() {
                     statusEl.innerHTML = '<span class="dot dot-red"></span> Putus';
                 });
         }
@@ -307,8 +307,7 @@
                         status.textContent = '✗ Gagal: ' + (data.message || 'unknown');
                     }
                 })
-                .catch(function(e) {
-                    console.error('buzzerOn error:', e);
+                .catch(function() {
                     status.className = 'ctrl-feedback err';
                     status.textContent = '✗ Gagal — server tidak merespon';
                 })
@@ -333,8 +332,7 @@
                         status.textContent = '✗ Gagal: ' + (data.message || 'unknown');
                     }
                 })
-                .catch(function(e) {
-                    console.error('buzzerOff error:', e);
+                .catch(function() {
                     status.className = 'ctrl-feedback err';
                     status.textContent = '✗ Gagal — server tidak merespon';
                 })
