@@ -148,7 +148,6 @@
                 <span id="connection-status" class="status-indicator"><span class="dot dot-green"></span> Live</span>
                 <span id="last-update">—</span>
                 <div id="clock"></div>
-                <button onclick="fetchData()" id="btn-refresh" class="btn btn-off" style="padding:6px 14px;font-size:0.7rem;">↻ Refresh</button>
             </div>
         </header>
 
@@ -188,6 +187,7 @@
                 <button id="btn-buzzer-on" class="btn btn-on" onclick="buzzerOn()">Nyalakan Buzzer</button>
                 <button id="btn-buzzer-off" class="btn btn-off" onclick="buzzerOff()">Matikan Buzzer</button>
                 <span id="buzzer-status" class="ctrl-feedback">—</span>
+                <button onclick="fetchData()" id="btn-refresh" class="btn btn-off" style="padding:6px 14px;font-size:0.7rem;">↻ Refresh</button>
             </div>
         </div>
 
