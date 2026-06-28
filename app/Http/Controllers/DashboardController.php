@@ -26,11 +26,24 @@ class DashboardController extends Controller
         $terdeteksiCount = (clone $today)->where('deteksi_burung', 'TERDETEKSI')->count();
         $histories = MonitoringData::latest()->take(50)->get();
 
+        $deteksiPerJam = (clone $today)->where('deteksi_burung', 'TERDETEKSI')
+            ->selectRaw("strftime('%H', created_at) as jam, count(*) as total")
+            ->groupBy('jam')
+            ->orderBy('jam')
+            ->pluck('total', 'jam');
+
+        $chart = [];
+        for ($i = 0; $i < 24; $i++) {
+            $jam = str_pad($i, 2, '0', STR_PAD_LEFT);
+            $chart[] = $deteksiPerJam[$jam] ?? 0;
+        }
+
         return response()->json([
             'latest' => $latest,
             'todayCount' => $todayCount,
             'amanCount' => $amanCount,
             'terdeteksiCount' => $terdeteksiCount,
+            'chart' => $chart,
             'histories' => $histories,
         ]);
     }
