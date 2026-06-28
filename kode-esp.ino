@@ -16,7 +16,7 @@ const char* password = "Taara2025";
 //========================
 // SERVER LARAVEL
 //========================
-String serverBase = "http://104.245.35.3:8080/api";
+String serverBase = "http://192.168.1.3:8000/api";
 String serverUrl = serverBase + "/update";
 
 //========================
