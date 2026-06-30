@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-token" content="{{ config('app.api_token') }}">
     <title>Sistem Pengusir Burung - Monitoring</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
@@ -38,7 +39,7 @@
             font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 1.2px; color: #006666; margin-bottom: 18px;
         }
-        .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+        .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
         .status-item {
             text-align: center; padding: 14px 10px;
             background: #E7E5E4; border-radius: 8px;
@@ -120,8 +121,52 @@
         .dot-green { background: #00A63D; box-shadow: -1px -1px 3px rgba(255,255,255,0.5), 2px 2px 5px rgba(0,0,0,0.1); }
         .dot-red { background: #FF2157; box-shadow: -1px -1px 3px rgba(255,255,255,0.5), 2px 2px 5px rgba(0,0,0,0.1); }
         .dot-gray { background: #1E2938; opacity: 0.4; box-shadow: -1px -1px 3px rgba(255,255,255,0.5), 2px 2px 5px rgba(0,0,0,0.1); }
+        .dot-yellow { background: #FE9900; box-shadow: -1px -1px 3px rgba(255,255,255,0.5), 2px 2px 5px rgba(0,0,0,0.1); }
         #last-update { font-size: 0.72rem; color: #1E2938; opacity: 0.5; margin-left: 16px; }
-        .ctrl-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+        /* ── Toggle Switch ── */
+        .ctrl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .ctrl-card {
+            background: #E7E5E4; border-radius: 8px; padding: 20px 24px;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.08), inset -2px -2px 5px rgba(255,255,255,0.6);
+            display: flex; align-items: center; justify-content: space-between;
+            transition: background .3s;
+        }
+        .ctrl-card.active { background: rgba(0,166,61,0.06); }
+        .ctrl-info { display: flex; flex-direction: column; gap: 4px; }
+        .ctrl-name { font-size: 0.9rem; font-weight: 700; color: #1E2938; }
+        .ctrl-desc { font-size: 0.68rem; color: #1E2938; opacity: 0.5; }
+        .toggle-wrapper { display: flex; align-items: center; gap: 10px; }
+        .toggle-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; min-width: 32px; text-align: center; }
+        .toggle-label.on { color: #00A63D; }
+        .toggle-label.off { color: #1E2938; opacity: 0.4; }
+        .toggle-switch {
+            position: relative; width: 56px; height: 30px; flex-shrink: 0;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: #E7E5E4; border-radius: 30px;
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.12), inset -2px -2px 4px rgba(255,255,255,0.6);
+            transition: background .3s, box-shadow .3s;
+        }
+        .toggle-slider::before {
+            content: ""; position: absolute; height: 22px; width: 22px;
+            left: 4px; bottom: 4px;
+            background: #E7E5E4; border-radius: 50%;
+            box-shadow: -2px -2px 4px rgba(255,255,255,0.7), 2px 2px 5px rgba(0,0,0,0.15);
+            transition: transform .25s;
+        }
+        .toggle-switch input:checked + .toggle-slider { background: #006666; }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(26px); }
+        .toggle-switch input:disabled + .toggle-slider { cursor: not-allowed; opacity: 0.5; }
+        .toggle-spinner {
+            display: none; width: 14px; height: 14px; flex-shrink: 0;
+            border: 2px solid rgba(0,0,0,.15); border-top-color: #006666;
+            border-radius: 50%; animation: spin .6s linear infinite;
+        }
+        .toggle-spinner.show { display: inline-block; }
+
         .btn {
             padding: 12px 28px; border-radius: 4px; border: none;
             font-family: 'Space Mono', monospace;
@@ -136,29 +181,16 @@
             transform: scale(0.97);
         }
         .btn:disabled { opacity: .4; cursor: not-allowed; }
-        .btn-on { background: #006666; color: #fff; }
-        .btn-on:hover:not(:disabled) { background: #007a7a; }
-        .btn-off { background: #E7E5E4; color: #1E2938; }
-        .btn-off:hover:not(:disabled) { background: #E0DEDD; }
         .btn-danger { background: #E7E5E4; color: #FF2157; }
         .btn-danger:hover:not(:disabled) { background: #E0DEDD; }
         .ml-auto { margin-left: auto; }
-        .ctrl-feedback { font-size: 0.78rem; color: #1E2938; min-width: 140px; opacity: 0.6; }
-        .ctrl-feedback.ok { color: #00A63D; opacity: 1; }
-        .ctrl-feedback.err { color: #FF2157; opacity: 1; }
-        .spinner {
-            display: inline-block; width: 14px; height: 14px;
-            border: 2px solid rgba(0,0,0,.15); border-top-color: #006666;
-            border-radius: 50%; animation: spin .6s linear infinite;
-        }
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
             body { padding: 16px; }
             header { flex-direction: column; align-items: flex-start; gap: 12px; }
             .cards { grid-template-columns: 1fr; }
-            .status-grid { grid-template-columns: 1fr; gap: 12px; }
-            .ctrl-bar { flex-direction: column; align-items: stretch; }
-            .btn { justify-content: center; }
+            .status-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .ctrl-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -187,8 +219,12 @@
                             <span id="badge-deteksi" class="badge badge-gray">—</span>
                         </div>
                         <div class="status-item">
-                            <div class="status-label">Status Buzzer</div>
+                            <div class="status-label">Buzzer</div>
                             <span id="badge-buzzer" class="badge badge-gray">—</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">Sensor PIR</div>
+                            <span id="badge-pir" class="badge badge-gray">—</span>
                         </div>
                     </div>
                     <div id="keterangan" class="keterangan-text" style="display:none;"></div>
@@ -220,19 +256,55 @@
         </div>
 
         <div class="card card-full">
-            <div class="card-title">Kontrol Buzzer</div>
-            <div class="ctrl-bar">
-                <button id="btn-buzzer-on" class="btn btn-on" onclick="buzzerOn()">Nyalakan Buzzer</button>
-                <button id="btn-buzzer-off" class="btn btn-off" onclick="buzzerOff()">Matikan Buzzer</button>
-                <span id="buzzer-status" class="ctrl-feedback">—</span>
-                <button onclick="fetchData()" id="btn-refresh" class="btn btn-off ml-auto" style="padding:6px 14px;font-size:0.7rem;">↻ Refresh</button>
+            <div class="card-title">Kontrol Perangkat</div>
+            <div class="ctrl-grid">
+                {{-- Buzzer Toggle --}}
+                <div class="ctrl-card" id="ctrl-buzzer-card">
+                    <div class="ctrl-info">
+                        <div class="ctrl-name">🔊 Buzzer</div>
+                        <div class="ctrl-desc">Kontrol output buzzer alarm</div>
+                    </div>
+                    <div class="toggle-wrapper">
+                        <span class="toggle-spinner" id="spinner-buzzer"></span>
+                        <span class="toggle-label off" id="label-buzzer-off">OFF</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-buzzer" onchange="toggleDevice('buzzer', this)" disabled>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label on" id="label-buzzer-on">ON</span>
+                    </div>
+                </div>
+
+                {{-- PIR Toggle --}}
+                <div class="ctrl-card" id="ctrl-pir-card">
+                    <div class="ctrl-info">
+                        <div class="ctrl-name">📡 Sensor PIR</div>
+                        <div class="ctrl-desc">Aktifkan/nonaktifkan deteksi gerak</div>
+                    </div>
+                    <div class="toggle-wrapper">
+                        <span class="toggle-spinner" id="spinner-pir"></span>
+                        <span class="toggle-label off" id="label-pir-off">OFF</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-pir" onchange="toggleDevice('pir', this)" disabled>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label on" id="label-pir-on">ON</span>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:12px;">
+                <button id="btn-all-off" onclick="allOff()" class="btn btn-danger" style="background:#FF2157;color:#fff;font-size:0.85rem;padding:14px 28px;">
+                    ⏻ MATIKAN SEMUA
+                </button>
+                <span id="ctrl-feedback" style="font-size:0.78rem;color:#1E2938;opacity:0.6;">Siap</span>
+                <button onclick="fetchData()" id="btn-refresh" class="btn ml-auto" style="padding:6px 14px;font-size:0.7rem;background:#E7E5E4;color:#006666;">↻ Refresh</button>
             </div>
         </div>
 
         <div class="table-wrapper">
             <div class="table-header">
                 <span id="riwayat-title">Riwayat Monitoring</span>
-                <button onclick="clearHistory()" class="btn btn-danger">✕ Hapus Riwayat</button>
+                <button id="btn-clear" onclick="clearHistory()" class="btn btn-danger">✕ Hapus Riwayat</button>
             </div>
             <div class="table-responsive">
                 <table>
@@ -242,11 +314,12 @@
                             <th>Status Alat</th>
                             <th>Deteksi</th>
                             <th>Buzzer</th>
+                            <th>PIR</th>
                             <th>Keterangan</th>
                         </tr>
                     </thead>
                     <tbody id="history-body">
-                        <tr><td colspan="5" class="empty-state">Memuat data...</td></tr>
+                        <tr><td colspan="6" class="empty-state">Memuat data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -255,13 +328,23 @@
     </div>
 
     <script>
+        const API_TOKEN = document.querySelector('meta[name="api-token"]').getAttribute('content');
+
+        function apiHeaders(extra) {
+            var h = { 'X-API-Token': API_TOKEN };
+            if (extra) Object.assign(h, extra);
+            return h;
+        }
+
         function badgeHtml(value, type, id) {
             const cls = type === 'alat'
                 ? (value === 'AKTIF' ? 'badge-green' : 'badge-gray')
                 : type === 'deteksi'
                 ? (value === 'TERDETEKSI' ? 'badge-red' : (value === 'AMAN' ? 'badge-green' : 'badge-none'))
+                : type === 'pir'
+                ? (value === 'AKTIF' ? 'badge-green' : 'badge-red')
                 : (value === 'ON' ? 'badge-yellow' : 'badge-gray');
-            return `<span class="badge ${cls}"${id ? ' id="' + id + '"' : ''}>${value || '—'}</span>`;
+            return '<span class="badge ' + cls + '"' + (id ? ' id="' + id + '"' : '') + '>' + (value || '—') + '</span>';
         }
 
         function escapeHtml(text) {
@@ -271,6 +354,7 @@
         }
 
         var currentPage = 1;
+        var isLoading = false;
 
         function renderPagination(data) {
             var el = document.getElementById('pagination');
@@ -290,12 +374,46 @@
             fetchData();
         }
 
+        function syncToggles(latest) {
+            var buzzerState = latest ? (latest.status_buzzer || 'OFF') : 'OFF';
+            var pirState = latest ? (latest.status_pir || 'AKTIF') : 'AKTIF';
+
+            var buzzerToggle = document.getElementById('toggle-buzzer');
+            var pirToggle = document.getElementById('toggle-pir');
+
+            if (!buzzerToggle.dataset.pending) {
+                buzzerToggle.checked = buzzerState === 'ON';
+                buzzerToggle.disabled = false;
+                updateToggleLabels('buzzer', buzzerState);
+            }
+            if (!pirToggle.dataset.pending) {
+                pirToggle.checked = pirState === 'AKTIF';
+                pirToggle.disabled = false;
+                updateToggleLabels('pir', pirState);
+            }
+        }
+
+        function updateToggleLabels(device, state) {
+            var onLabel = document.getElementById('label-' + device + '-on');
+            var offLabel = document.getElementById('label-' + device + '-off');
+            if (state === 'ON') {
+                onLabel.className = 'toggle-label on';
+                offLabel.className = 'toggle-label off';
+            } else {
+                onLabel.className = 'toggle-label off';
+                offLabel.className = 'toggle-label on';
+            }
+        }
+
         function updateDashboard(data) {
             const l = data.latest;
             if (l) {
                 document.getElementById('badge-alat').outerHTML = badgeHtml(l.status_alat, 'alat', 'badge-alat');
                 document.getElementById('badge-deteksi').outerHTML = badgeHtml(l.deteksi_burung, 'deteksi', 'badge-deteksi');
                 document.getElementById('badge-buzzer').outerHTML = badgeHtml(l.status_buzzer, 'buzzer', 'badge-buzzer');
+                document.getElementById('badge-pir').outerHTML = badgeHtml(l.status_pir || 'AKTIF', 'pir', 'badge-pir');
+
+                syncToggles(l);
 
                 const ket = document.getElementById('keterangan');
                 if (l.keterangan) {
@@ -327,11 +445,12 @@
                         + '<td>' + badgeHtml(r.status_alat, 'alat') + '</td>'
                         + '<td>' + badgeHtml(r.deteksi_burung, 'deteksi') + '</td>'
                         + '<td>' + badgeHtml(r.status_buzzer, 'buzzer') + '</td>'
+                        + '<td>' + badgeHtml(r.status_pir || 'AKTIF', 'pir') + '</td>'
                         + '<td>' + escapeHtml(r.keterangan) + '</td>'
                         + '</tr>';
                 }).join('');
             } else {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada data monitoring.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada data monitoring.</td></tr>';
             }
 
             document.getElementById('last-update').textContent = new Date().toLocaleTimeString('id-ID');
@@ -343,7 +462,12 @@
         }
 
         function fetchData() {
+            if (isLoading) return;
+            isLoading = true;
+
             var statusEl = document.getElementById('connection-status');
+            statusEl.innerHTML = '<span class="dot dot-yellow"></span> Memuat...';
+
             fetch('/json?page=' + currentPage)
                 .then(function(r) {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -356,78 +480,156 @@
                 })
                 .catch(function() {
                     statusEl.innerHTML = '<span class="dot dot-red"></span> Putus';
+                })
+                .finally(function() {
+                    isLoading = false;
                 });
         }
 
-        function buzzerOn() {
-            var btn = document.getElementById('btn-buzzer-on');
-            var status = document.getElementById('buzzer-status');
-            btn.disabled = true;
-            status.className = 'ctrl-feedback';
-            status.innerHTML = '<span class="spinner"></span> Mengirim...';
-            fetch('/api/buzzer/on', { method: 'POST' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        status.className = 'ctrl-feedback ok';
-                        status.textContent = '✓ Buzzer ON terkirim';
-                        document.getElementById('badge-buzzer').outerHTML = badgeHtml('ON', 'buzzer', 'badge-buzzer');
+        function toggleDevice(device, checkbox) {
+            var feedback = document.getElementById('ctrl-feedback');
+            var spinner = document.getElementById('spinner-' + device);
+
+            // Mark pending so syncToggles doesn't overwrite
+            checkbox.dataset.pending = '1';
+            checkbox.disabled = true;
+            spinner.classList.add('show');
+            feedback.textContent = 'Mengirim...';
+            feedback.style.opacity = '0.6';
+            feedback.style.color = '#1E2938';
+
+            var url = '/api/' + device + '/toggle';
+
+            fetch(url, {
+                method: 'POST',
+                headers: apiHeaders({ 'Content-Type': 'application/json' }),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var newState = data.buzzer || data.pir;
+                    var isPirOn = newState === 'AKTIF';
+                    checkbox.checked = device === 'pir' ? isPirOn : (newState === 'ON');
+                    updateToggleLabels(device, newState);
+                    feedback.textContent = '✓ ' + data.message;
+                    feedback.style.color = '#00A63D';
+                    feedback.style.opacity = '1';
+
+                    // Update badges
+                    if (device === 'pir') {
+                        document.getElementById('badge-pir').outerHTML = badgeHtml(newState, 'pir', 'badge-pir');
                     } else {
-                        status.className = 'ctrl-feedback err';
-                        status.textContent = '✗ Gagal: ' + (data.message || 'unknown');
+                        document.getElementById('badge-buzzer').outerHTML = badgeHtml(newState, 'buzzer', 'badge-buzzer');
                     }
-                })
-                .catch(function() {
-                    status.className = 'ctrl-feedback err';
-                    status.textContent = '✗ Gagal — server tidak merespon';
-                })
-                .finally(function() { btn.disabled = false; });
+                } else {
+                    feedback.textContent = '✗ Gagal: ' + (data.message || 'unknown');
+                    feedback.style.color = '#FF2157';
+                    feedback.style.opacity = '1';
+                }
+            })
+            .catch(function() {
+                feedback.textContent = '✗ Gagal — server tidak merespon';
+                feedback.style.color = '#FF2157';
+                feedback.style.opacity = '1';
+            })
+            .finally(function() {
+                delete checkbox.dataset.pending;
+                checkbox.disabled = false;
+                spinner.classList.remove('show');
+                setTimeout(function() {
+                    feedback.textContent = 'Siap';
+                    feedback.style.opacity = '0.6';
+                    feedback.style.color = '#1E2938';
+                }, 3000);
+            });
         }
 
-        function buzzerOff() {
-            var btn = document.getElementById('btn-buzzer-off');
-            var status = document.getElementById('buzzer-status');
+        function allOff() {
+            if (!confirm('MATIKAN SEMUA perangkat?\nBuzzer + PIR akan OFF.')) return;
+
+            var btn = document.getElementById('btn-all-off');
+            var feedback = document.getElementById('ctrl-feedback');
+            var spinnerBuzzer = document.getElementById('spinner-buzzer');
+            var spinnerPir = document.getElementById('spinner-pir');
+
             btn.disabled = true;
-            status.className = 'ctrl-feedback';
-            status.innerHTML = '<span class="spinner"></span> Mengirim...';
-            fetch('/api/buzzer/off', { method: 'POST' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        status.className = 'ctrl-feedback ok';
-                        status.textContent = '✓ Buzzer OFF terkirim';
-                        document.getElementById('badge-buzzer').outerHTML = badgeHtml('OFF', 'buzzer', 'badge-buzzer');
-                    } else {
-                        status.className = 'ctrl-feedback err';
-                        status.textContent = '✗ Gagal: ' + (data.message || 'unknown');
-                    }
-                })
-                .catch(function() {
-                    status.className = 'ctrl-feedback err';
-                    status.textContent = '✗ Gagal — server tidak merespon';
-                })
-                .finally(function() { btn.disabled = false; });
+            btn.textContent = '⏳ MEMATIKAN...';
+            spinnerBuzzer.classList.add('show');
+            spinnerPir.classList.add('show');
+            feedback.textContent = 'Mematikan semua...';
+            feedback.style.opacity = '0.6';
+            feedback.style.color = '#1E2938';
+
+            fetch('/api/all/off', {
+                method: 'POST',
+                headers: apiHeaders({ 'Content-Type': 'application/json' }),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    // Update toggle switches
+                    document.getElementById('toggle-buzzer').checked = false;
+                    document.getElementById('toggle-pir').checked = false;
+                    updateToggleLabels('buzzer', 'OFF');
+                    updateToggleLabels('pir', 'NONAKTIF');
+                    // Update badges
+                    document.getElementById('badge-buzzer').outerHTML = badgeHtml('OFF', 'buzzer', 'badge-buzzer');
+                    document.getElementById('badge-pir').outerHTML = badgeHtml('NONAKTIF', 'pir', 'badge-pir');
+                    feedback.textContent = '✓ ' + data.message;
+                    feedback.style.color = '#00A63D';
+                    feedback.style.opacity = '1';
+                } else {
+                    feedback.textContent = '✗ Gagal';
+                    feedback.style.color = '#FF2157';
+                    feedback.style.opacity = '1';
+                }
+            })
+            .catch(function() {
+                feedback.textContent = '✗ Server tidak merespon';
+                feedback.style.color = '#FF2157';
+                feedback.style.opacity = '1';
+            })
+            .finally(function() {
+                btn.disabled = false;
+                btn.innerHTML = '⏻ MATIKAN SEMUA';
+                spinnerBuzzer.classList.remove('show');
+                spinnerPir.classList.remove('show');
+                setTimeout(function() {
+                    feedback.textContent = 'Siap';
+                    feedback.style.opacity = '0.6';
+                    feedback.style.color = '#1E2938';
+                }, 3000);
+            });
         }
 
         function clearHistory() {
             if (!confirm('Hapus semua riwayat monitoring?')) return;
-            fetch('/api/history', { method: 'DELETE' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        document.getElementById('history-body').innerHTML = '<tr><td colspan="5" class="empty-state">Riwayat dikosongkan.</td></tr>';
-                        document.getElementById('riwayat-title').textContent = 'Riwayat Monitoring';
-                        document.getElementById('pagination').innerHTML = '';
-                        document.getElementById('stat-total').textContent = '0';
-                        document.getElementById('stat-aman').textContent = '0';
-                        document.getElementById('stat-terdeteksi').textContent = '0';
-                        currentPage = 1;
-                        if (window.deteksiChart) {
-                            deteksiChart.data.datasets[0].data = [];
-                            deteksiChart.update();
-                        }
-                    }
-                });
+
+            var btn = document.getElementById('btn-clear');
+            btn.disabled = true;
+            btn.textContent = '⏳ Menghapus...';
+
+            fetch('/api/history', {
+                method: 'DELETE',
+                headers: apiHeaders(),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    updateDashboard(data);
+                    renderPagination(data);
+                    currentPage = 1;
+                } else {
+                    alert('Gagal menghapus riwayat: ' + (data.message || 'unknown'));
+                }
+            })
+            .catch(function() {
+                alert('Gagal menghapus riwayat — server tidak merespon');
+            })
+            .finally(function() {
+                btn.disabled = false;
+                btn.innerHTML = '✕ Hapus Riwayat';
+            });
         }
 
         function updateClock() {
@@ -471,7 +673,7 @@
         });
 
         fetchData();
-        setInterval(fetchData, 3000);
+        setInterval(fetchData, 5000);
     </script>
 </body>
 </html>

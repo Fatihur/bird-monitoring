@@ -10,6 +10,8 @@ class MonitoringData extends Model
         'status_alat',
         'deteksi_burung',
         'status_buzzer',
+        'status_relay',
+        'status_pir',
         'keterangan',
     ];
 }

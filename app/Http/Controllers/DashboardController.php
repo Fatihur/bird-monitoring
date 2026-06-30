@@ -6,6 +6,7 @@ use App\Models\Command;
 use App\Models\MonitoringData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -28,8 +29,16 @@ class DashboardController extends Controller
 
         $histories = MonitoringData::latest()->paginate(50, ['*'], 'page', $request->query('page', 1));
 
+        $driver = DB::connection()->getDriverName();
+        $hourExpr = match ($driver) {
+            'sqlite' => "strftime('%H', created_at)",
+            'mysql'  => "DATE_FORMAT(created_at, '%H')",
+            'pgsql'  => "TO_CHAR(created_at, 'HH24')",
+            default  => "strftime('%H', created_at)",
+        };
+
         $deteksiPerJam = (clone $today)->where('deteksi_burung', 'TERDETEKSI')
-            ->selectRaw("strftime('%H', created_at) as jam, count(*) as total")
+            ->selectRaw("{$hourExpr} as jam, count(*) as total")
             ->groupBy('jam')
             ->orderBy('jam')
             ->pluck('total', 'jam');
@@ -37,7 +46,7 @@ class DashboardController extends Controller
         $chart = [];
         for ($i = 0; $i < 24; $i++) {
             $jam = str_pad($i, 2, '0', STR_PAD_LEFT);
-            $chart[] = $deteksiPerJam[$jam] ?? 0;
+            $chart[] = (int) ($deteksiPerJam[$jam] ?? 0);
         }
 
         return response()->json([
@@ -58,6 +67,18 @@ class DashboardController extends Controller
         MonitoringData::truncate();
         Command::truncate();
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Semua riwayat berhasil dihapus',
+            'todayCount' => 0,
+            'amanCount' => 0,
+            'terdeteksiCount' => 0,
+            'chart' => array_fill(0, 24, 0),
+            'histories' => [],
+            'current_page' => 1,
+            'last_page' => 1,
+            'total' => 0,
+            'latest' => null,
+        ]);
     }
 }

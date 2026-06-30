@@ -14,6 +14,8 @@ class UpdateController extends Controller
             'status_alat' => 'required|string',
             'deteksi_burung' => 'required|string',
             'status_buzzer' => 'required|string',
+            'status_relay' => 'nullable|string',
+            'status_pir' => 'nullable|string',
             'keterangan' => 'nullable|string',
         ]);
 

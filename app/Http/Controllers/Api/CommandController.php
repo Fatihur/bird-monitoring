@@ -12,48 +12,118 @@ class CommandController extends Controller
     public function index()
     {
         $command = Command::where('acknowledged', false)
-            ->whereNotNull('buzzer')
+            ->where(function ($q) {
+                $q->whereNotNull('buzzer')
+                  ->orWhereNotNull('relay')
+                  ->orWhereNotNull('all_off')
+                  ->orWhereNotNull('pir');
+            })
             ->latest()
             ->first();
 
         return response()->json([
             'buzzer' => $command?->buzzer ?? null,
+            'relay' => $command?->relay ?? null,
+            'pir' => $command?->pir ?? null,
+            'all_off' => $command?->all_off ?? null,
             'command_id' => $command?->id ?? null,
         ]);
     }
 
-    public function buzzerOn()
+    public function toggleRelay()
     {
-        $command = Command::create(['buzzer' => 'ON']);
+        $latest = MonitoringData::latest()->first();
+        $currentRelay = $latest?->status_relay ?? 'OFF';
+        $newState = $currentRelay === 'ON' ? 'OFF' : 'ON';
+
+        $command = Command::create(['relay' => $newState]);
 
         MonitoringData::create([
             'status_alat' => 'AKTIF',
             'deteksi_burung' => 'AMAN',
-            'status_buzzer' => 'ON',
-            'keterangan' => 'Buzzer dinyalakan manual dari dashboard',
+            'status_buzzer' => $latest?->status_buzzer ?? 'OFF',
+            'status_relay' => $newState,
+            'status_pir' => $latest?->status_pir ?? 'AKTIF',
+            'keterangan' => "Relay {$newState} dari dashboard",
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Buzzer ON',
+            'message' => "Relay {$newState}",
+            'relay' => $newState,
             'command_id' => $command->id,
         ]);
     }
 
-    public function buzzerOff()
+    public function toggleBuzzer()
     {
-        $command = Command::create(['buzzer' => 'OFF']);
+        $latest = MonitoringData::latest()->first();
+        $currentBuzzer = $latest?->status_buzzer ?? 'OFF';
+        $newState = $currentBuzzer === 'ON' ? 'OFF' : 'ON';
+
+        $command = Command::create(['buzzer' => $newState]);
+
+        MonitoringData::create([
+            'status_alat' => 'AKTIF',
+            'deteksi_burung' => 'AMAN',
+            'status_buzzer' => $newState,
+            'status_relay' => $latest?->status_relay ?? 'OFF',
+            'status_pir' => $latest?->status_pir ?? 'AKTIF',
+            'keterangan' => "Buzzer {$newState} dari dashboard",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Buzzer {$newState}",
+            'buzzer' => $newState,
+            'command_id' => $command->id,
+        ]);
+    }
+
+    public function togglePir()
+    {
+        $latest = MonitoringData::latest()->first();
+        $currentPir = $latest?->status_pir ?? 'AKTIF';
+        $newState = $currentPir === 'AKTIF' ? 'NONAKTIF' : 'AKTIF';
+
+        $command = Command::create(['pir' => $newState]);
+
+        MonitoringData::create([
+            'status_alat' => 'AKTIF',
+            'deteksi_burung' => 'AMAN',
+            'status_buzzer' => $latest?->status_buzzer ?? 'OFF',
+            'status_relay' => $latest?->status_relay ?? 'OFF',
+            'status_pir' => $newState,
+            'keterangan' => "Sensor PIR {$newState} dari dashboard",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Sensor PIR {$newState}",
+            'pir' => $newState,
+            'command_id' => $command->id,
+        ]);
+    }
+
+    public function allOff()
+    {
+        $command = Command::create(['all_off' => '1']);
 
         MonitoringData::create([
             'status_alat' => 'AKTIF',
             'deteksi_burung' => 'AMAN',
             'status_buzzer' => 'OFF',
-            'keterangan' => 'Buzzer dimatikan manual dari dashboard',
+            'status_relay' => 'OFF',
+            'status_pir' => 'NONAKTIF',
+            'keterangan' => 'Semua perangkat dimatikan dari dashboard',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Buzzer OFF',
+            'message' => 'Semua perangkat dimatikan',
+            'relay' => 'OFF',
+            'buzzer' => 'OFF',
+            'pir' => 'NONAKTIF',
             'command_id' => $command->id,
         ]);
     }
@@ -68,6 +138,9 @@ class CommandController extends Controller
         $command->update([
             'acknowledged' => true,
             'buzzer' => null,
+            'relay' => null,
+            'all_off' => null,
+            'pir' => null,
         ]);
 
         return response()->json([
