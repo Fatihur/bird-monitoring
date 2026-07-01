@@ -55,27 +55,25 @@ class CommandController extends Controller
         ]);
     }
 
-    public function toggleBuzzer()
+    public function triggerBuzzer()
     {
         $latest = MonitoringData::latest()->first();
-        $currentBuzzer = $latest?->status_buzzer ?? 'OFF';
-        $newState = $currentBuzzer === 'ON' ? 'OFF' : 'ON';
 
-        $command = Command::create(['buzzer' => $newState]);
+        $command = Command::create(['buzzer' => 'TRIGGER']);
 
         MonitoringData::create([
             'status_alat' => 'AKTIF',
             'deteksi_burung' => 'AMAN',
-            'status_buzzer' => $newState,
+            'status_buzzer' => 'ON',
             'status_relay' => $latest?->status_relay ?? 'OFF',
             'status_pir' => $latest?->status_pir ?? 'AKTIF',
-            'keterangan' => "Buzzer {$newState} dari dashboard",
+            'keterangan' => 'Buzzer dipicu dari dashboard',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => "Buzzer {$newState}",
-            'buzzer' => $newState,
+            'message' => 'Buzzer dipicu (5 detik)',
+            'buzzer' => 'TRIGGER',
             'command_id' => $command->id,
         ]);
     }
