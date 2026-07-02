@@ -314,7 +314,7 @@
 
         <div class="table-wrapper">
             <div class="table-header">
-                <span id="riwayat-title">Riwayat Monitoring</span>
+                <span id="riwayat-title">Riwayat Aktifitas</span>
                 <button id="btn-clear" onclick="clearHistory()" class="btn btn-danger">✕ Hapus Riwayat</button>
             </div>
             <div class="table-responsive">
