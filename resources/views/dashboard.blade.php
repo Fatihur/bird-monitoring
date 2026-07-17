@@ -217,7 +217,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Sistem Pengusir Burung <span>- Monitoring</span></h1>
+            <h1>Dashboard Pengusir Burung <span>- IoT</span></h1>
             <div style="display:flex;align-items:center;gap:12px;">
                 <span id="connection-status" class="status-indicator"><span class="dot dot-green"></span> Live</span>
                 <span id="last-update">—</span>
@@ -479,7 +479,9 @@
                 .then(function(data) {
                     updateDashboard(data);
                     renderPagination(data);
-                    statusEl.innerHTML = '<span class="dot dot-green"></span> Live';
+                    statusEl.innerHTML = data.is_online
+                        ? '<span class="dot dot-green"></span> Live'
+                        : '<span class="dot dot-red"></span> Putus';
                 })
                 .catch(function() {
                     statusEl.innerHTML = '<span class="dot dot-red"></span> Putus';

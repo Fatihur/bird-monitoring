@@ -6,6 +6,7 @@ use App\Models\Command;
 use App\Models\MonitoringData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -49,8 +50,12 @@ class DashboardController extends Controller
             $chart[] = (int) ($deteksiPerJam[$jam] ?? 0);
         }
 
+        $lastSeen = Cache::get('esp32_last_seen');
+        $isOnline = $lastSeen && Carbon::parse($lastSeen)->diffInSeconds() <= 12;
+
         return response()->json([
             'latest' => $latest,
+            'is_online' => $isOnline,
             'todayCount' => $todayCount,
             'amanCount' => $amanCount,
             'terdeteksiCount' => $terdeteksiCount,
@@ -67,8 +72,12 @@ class DashboardController extends Controller
         MonitoringData::truncate();
         Command::truncate();
 
+        $lastSeen = Cache::get('esp32_last_seen');
+        $isOnline = $lastSeen && Carbon::parse($lastSeen)->diffInSeconds() <= 12;
+
         return response()->json([
             'success' => true,
+            'is_online' => $isOnline,
             'message' => 'Semua riwayat berhasil dihapus',
             'todayCount' => 0,
             'amanCount' => 0,

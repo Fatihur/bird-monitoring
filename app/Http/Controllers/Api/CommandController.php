@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Command;
 use App\Models\MonitoringData;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CommandController extends Controller
 {
     public function index()
     {
+        Cache::put('esp32_last_seen', now(), 30);
+
         $command = Command::where('acknowledged', false)
             ->where(function ($q) {
                 $q->whereNotNull('buzzer')
